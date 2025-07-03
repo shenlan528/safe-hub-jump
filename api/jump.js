@@ -23,9 +23,9 @@ export default async function handler(req, res) {
   res.status(200).json({ t: encoded });
 }
 
-// ✅ ESM 环境下的 SHA-256
+// ✅ 兼容 Vercel 的 Web Crypto API 签名函数
 async function sha256(input) {
-  const buf = new TextEncoder().encode(input);
-  const hash = await crypto.subtle.digest('SHA-256', buf);
+  const buffer = new TextEncoder().encode(input);
+  const hash = await crypto.subtle.digest('SHA-256', buffer);
   return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
