@@ -1,1 +1,56 @@
-
+{
+  "en": {
+    "tip": "Click ⋯ in the top right and open in browser",
+    "btn1": "Watch Now ①",
+    "btn2": "Watch Now ②",
+    "btn3": "Watch Now ③"
+  },
+  "zh-CN": {
+    "tip": "请点击右上角 ⋯ 用浏览器打开",
+    "btn1": "精彩推荐①",
+    "btn2": "精彩推荐②",
+    "btn3": "精彩推荐③"
+  },
+  "zh-TW": {
+    "tip": "請點右上角 ⋯ 用瀏覽器開啟",
+    "btn1": "精彩推薦①",
+    "btn2": "精彩推薦②",
+    "btn3": "精彩推薦③"
+  },
+  "vi": {
+    "tip": "Nhấn ⋯ ở góc trên và mở bằng trình duyệt",
+    "btn1": "Xem ngay ①",
+    "btn2": "Xem ngay ②",
+    "btn3": "Xem ngay ③"
+  },
+  "es": {
+    "tip": "Haz clic en ⋯ arriba a la derecha y abre en el navegador",
+    "btn1": "Ver ahora ①",
+    "btn2": "Ver ahora ②",
+    "btn3": "Ver ahora ③"
+  },
+  "pt": {
+    "tip": "Clique em ⋯ no canto superior direito e abra no navegador",
+    "btn1": "Assista agora ①",
+    "btn2": "Assista agora ②",
+    "btn3": "Assista agora ③"
+  },
+  "it": {
+    "tip": "Clicca su ⋯ in alto a destra e apri nel browser",
+    "btn1": "Guarda ora ①",
+    "btn2": "Guarda ora ②",
+    "btn3": "Guarda ora ③"
+  },
+  "fr": {
+    "tip": "Cliquez sur ⋯ en haut à droite et ouvrez dans le navigateur",
+    "btn1": "Regarder maintenant ①",
+    "btn2": "Regarder maintenant ②",
+    "btn3": "Regarder maintenant ③"
+  },
+  "de": {
+    "tip": "Klicken Sie oben rechts auf ⋯ und öffnen Sie es im Browser",
+    "btn1": "Jetzt ansehen ①",
+    "btn2": "Jetzt ansehen ②",
+    "btn3": "Jetzt ansehen ③"
+  }
+}
