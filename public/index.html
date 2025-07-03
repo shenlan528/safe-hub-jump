@@ -1,1 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Safe Hub</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 2em; }
+    .btn { margin: 1em auto; padding: 1em; font-size: 18px; background: #0070f3; color: white; border: none; border-radius: 8px; cursor: pointer; width: 80%; max-width: 300px; }
+  </style>
+</head>
+<body>
+  <div id="tip" style="display:none;"><h3 id="tip-text"></h3></div>
+  <div id="buttons" style="display:none;">
+    <button class="btn" onclick="location.href='/jump1.html'" id="btn1"></button>
+    <button class="btn" onclick="location.href='/jump2.html'" id="btn2"></button>
+    <button class="btn" onclick="location.href='/jump3.html'" id="btn3"></button>
+  </div>
 
+  <script>
+    const langMap = {};
+    fetch('/lang.json')
+      .then(res => res.json())
+      .then(data => {
+        const ua = navigator.userAgent;
+        const isTikTok = /TikTok|aweme|com.ss.android.ugc/i.test(ua);
+        const lang = (navigator.language || 'en').toLowerCase();
+        const dict = data[lang] || data[lang.split('-')[0]] || data['en'];
+
+        document.getElementById('tip-text').innerText = dict.tip;
+        document.getElementById('btn1').innerText = dict.btn1;
+        document.getElementById('btn2').innerText = dict.btn2;
+        document.getElementById('btn3').innerText = dict.btn3;
+
+        document.getElementById(isTikTok ? 'tip' : 'buttons').style.display = 'block';
+      });
+  </script>
+</body>
+</html>
