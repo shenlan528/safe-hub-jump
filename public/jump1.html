@@ -2,21 +2,38 @@
 <html><head><meta charset="utf-8"><title>跳转中...</title></head>
 <body style="font-family:sans-serif;text-align:center;padding:2em;">
 <p>正在加载内容，请稍候…</p>
-<script>
-const ts = Math.floor(Date.now()/1000);
-const key = 'LoveTheTk@@EveryDay';
-const sign = sha256(ts + key); // 需要引入 sha256 实现
 
-fetch(`/api/jump?id=a1&ts=${ts}&sign=${sign}`)
-  .then(res => res.json())
-  .then(data => location.href = atob(data.t))
-  .catch(() => document.body.innerHTML = "跳转失败，请稍后再试。");
+<script>
+const key = 'LoveTheTk@@EveryDay';
+const id = 'a1';
+
+async function jump() {
+  const ts = Math.floor(Date.now() / 1000);
+  const sign = await sha256(ts + key);
+
+  try {
+    const res = await fetch(`/api/jump?id=${id}&ts=${ts}&sign=${sign}`);
+    const data = await res.json();
+
+    if (data && data.t) {
+      location.href = atob(data.t);
+    } else {
+      document.body.innerHTML = "跳转失败，请稍后再试。";
+    }
+  } catch (err) {
+    document.body.innerHTML = "跳转失败，请稍后再试。";
+  }
+}
 
 function sha256(msg) {
   return crypto.subtle.digest("SHA-256", new TextEncoder().encode(msg)).then(buf => {
     return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
   });
 }
+
+jump();
 </script>
+
+
 </body>
 </html>
