@@ -1,15 +1,13 @@
-const crypto = require('crypto');
-
-const SHARED_KEY = 'LoveTheTk@@EveryDay';
-
-export default function handler(req, res) {
+export default async function handler(req, res) {
   const { id, ts, sign } = req.query;
 
+  const key = 'LoveTheTk@@EveryDay';
   const now = Math.floor(Date.now() / 1000);
+
   if (!id || !ts || !sign) return res.status(400).json({ error: 'Missing params' });
   if (Math.abs(now - parseInt(ts)) > 300) return res.status(403).json({ error: 'Expired' });
 
-  const expectedSign = crypto.createHash('sha256').update(ts + SHARED_KEY).digest('hex');
+  const expectedSign = await sha256(ts + key);
   if (sign !== expectedSign) return res.status(403).json({ error: 'Invalid signature' });
 
   const map = {
@@ -23,4 +21,11 @@ export default function handler(req, res) {
 
   const encoded = Buffer.from(url).toString('base64');
   res.status(200).json({ t: encoded });
+}
+
+// ✅ ESM 环境下的 SHA-256
+async function sha256(input) {
+  const buf = new TextEncoder().encode(input);
+  const hash = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
