@@ -1,12 +1,22 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
   <meta charset="UTF-8" />
-  <title>Safe Hub</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>跳转提示页</title>
   <style>
-    body { font-family: sans-serif; text-align: center; padding: 2em; margin: 0; background: #f9f9f9; }
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 2em;
+      margin: 0;
+      background: #f2f2f2;
+    }
+    #safe-content, #warning {
+      display: none;
+    }
     .btn {
+      display: block;
       margin: 1em auto;
       padding: 1em;
       font-size: 18px;
@@ -19,105 +29,74 @@
       max-width: 320px;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     }
-    .lang-btn {
-      margin: 0.3em;
-      padding: 0.4em 0.8em;
-      font-size: 13px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      background: #fff;
-      cursor: pointer;
-    }
     #tip-img {
-      max-width: 220px;
-      margin: 1em auto;
-      display: block;
-    }
-    #ua-box {
-      font-size: 12px;
-      color: #555;
-      margin-top: 2em;
+      max-width: 200px;
+      margin-top: 1em;
     }
   </style>
 </head>
 <body>
 
-  <!-- 提示区域 -->
-  <div id="tip" style="display:none;">
-    <img id="tip-img" src="/tip.png" alt="Open in browser" />
-    <h3 id="tip-text"></h3>
+  <!-- 默认展示的提示图 -->
+  <div id="warning">
+    <img id="tip-img" src="/tip.png" alt="请用浏览器打开" />
+    <h3>请点击右上角「···」，选择“在浏览器中打开”</h3>
   </div>
 
-  <!-- 按钮区域 -->
-  <div id="buttons" style="display:none;">
-    <button class="btn" onclick="location.href='/jump1.html'" id="btn1"></button>
-    <button class="btn" onclick="location.href='/jump2.html'" id="btn2"></button>
-    <button class="btn" onclick="location.href='/jump3.html'" id="btn3"></button>
-  </div>
-
-  <!-- 语言切换按钮 -->
-  <div id="lang-switcher" style="margin-top: 20px;"></div>
-
-  <!-- UA 显示区域 -->
-  <div id="ua-box">
-    <div><strong>Language:</strong> <span id="lang"></span></div>
-    <div><strong>User-Agent:</strong></div>
-    <pre id="ua"></pre>
+  <!-- 系统浏览器才展示跳转按钮 -->
+  <div id="safe-content">
+    <button class="btn" onclick="goLive(1)">看直播通道 1</button>
+    <button class="btn" onclick="goLive(2)">看直播通道 2</button>
+    <button class="btn" onclick="goLive(3)">看直播通道 3</button>
   </div>
 
   <script>
-    const supportedLangs = ["en", "zh", "zh-TW", "es", "vi", "pt", "fr", "de", "it", "ja", "ko", "ru", "hi", "tr", "th", "id", "ar", "ms", "pl", "nl"];
     const ua = navigator.userAgent.toLowerCase();
-    document.getElementById('ua').innerText = navigator.userAgent;
 
-    // 语言识别
-    const urlParams = new URLSearchParams(window.location.search);
-    const queryLang = urlParams.get('lang');
-    const navLang = (navigator.language || 'en').split('-')[0];
-    let currentLang = queryLang || (supportedLangs.includes(navLang) ? navLang : 'en');
-    document.getElementById('lang').innerText = currentLang;
+    const embeddedBrowsers = [
+      'micromessenger', 'toutiao', 'tiktok', 'douyin',
+      'musical_ly', 'trill', 'fbav', 'instagram',
+      'line', 'bytedancewebview'
+    ];
 
-    // 优先识别常见“内嵌浏览器”
-    const isUnsafeBrowser = () => {
-      return (
-        ua.includes('micromessenger') ||  // 微信
-        ua.includes('toutiao') ||
-        ua.includes('tiktok') ||
-        ua.includes('douyin') ||
-        ua.includes('fbav') ||            // Facebook
-        ua.includes('instagram') ||
-        ua.includes('line')
-      );
+    const isSafeBrowser = () => {
+      return !embeddedBrowsers.some(keyword => ua.includes(keyword));
     };
 
-    const isSafeBrowser = () => !isUnsafeBrowser();
+    if (isSafeBrowser()) {
+      document.getElementById("safe-content").style.display = "block";
+    } else {
+      document.getElementById("warning").style.display = "block";
+    }
 
-    // 加载语言包
-    fetch('/lang.json')
-      .then(res => res.json())
-      .then(data => {
-        const dict = data[currentLang] || data['en'];
-        document.getElementById('tip-text').innerText = dict.tip;
-        document.getElementById('btn1').innerText = dict.btn1;
-        document.getElementById('btn2').innerText = dict.btn2;
-        document.getElementById('btn3').innerText = dict.btn3;
+    async function goLive(n) {
+      const id = `a${n}`;
+      const ts = Math.floor(Date.now() / 1000);
+      const key = 'LoveTheTk@@EveryDay';
 
-        // 显示提示还是按钮
-        document.getElementById(isSafeBrowser() ? 'buttons' : 'tip').style.display = 'block';
+      const sign = await sha256(ts + key);
+      const res = await fetch(`/api/jump?id=${id}&ts=${ts}&sign=${sign}`);
+      const data = await res.json();
 
-        // 语言切换按钮
-        const langSwitcher = document.getElementById('lang-switcher');
-        supportedLangs.forEach(l => {
-          const btn = document.createElement('button');
-          btn.innerText = l;
-          btn.className = 'lang-btn';
-          btn.onclick = () => location.search = '?lang=' + l;
-          langSwitcher.appendChild(btn);
-        });
-      })
-      .catch(err => {
-        console.error('Language file load failed:', err);
-      });
+      if (data.t) {
+        const decoded = atob(data.t);
+        location.href = decoded;
+      } else {
+        alert("跳转失败，请稍后再试");
+      }
+    }
+
+    async function sha256(input) {
+      const buffer = new TextEncoder().encode(input);
+      const hash = await crypto.subtle.digest('SHA-256', buffer);
+      return Array.from(new Uint8Array(hash))
+        .map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    fetch('/api/log-ua', {
+      method: 'POST',
+      body: JSON.stringify({ ua: navigator.userAgent })
+    });
   </script>
 </body>
 </html>
