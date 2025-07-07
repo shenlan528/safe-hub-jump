@@ -19,11 +19,16 @@
   </div>
 
   <div id="lang-switcher" style="margin-top: 20px;"></div>
+  <!-- UA 显示区域 -->
+  <div id="ua-box">
+    <strong>User-Agent:</strong>
+    <pre id="ua"></pre>
+  </div>
 
   <script>
     const supportedLangs = ["en", "zh", "zh-TW", "es", "vi", "pt", "fr", "de", "it", "ja", "ko", "ru", "hi", "tr", "th", "id", "ar", "ms", "pl", "nl"];
     const ua = navigator.userAgent.toLowerCase();
-
+	document.getElementById('ua').innerText = navigator.userAgent;
     const isSafeBrowser = () => {
       return (
         ua.includes('safari') ||
