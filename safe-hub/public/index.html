@@ -7,6 +7,7 @@
   <style>
     body { font-family: sans-serif; text-align: center; padding: 2em; }
     .btn { margin: 1em auto; padding: 1em; font-size: 18px; background: #0070f3; color: white; border: none; border-radius: 8px; cursor: pointer; width: 80%; max-width: 300px; }
+    #ua-box { margin-top: 2em; padding: 1em; background: #eee; font-size: 14px; word-break: break-all; }
   </style>
 </head>
 <body>
@@ -17,13 +18,42 @@
     <button class="btn" onclick="location.href='/jump3.html'" id="btn3"></button>
   </div>
 
+  <!-- UA 显示区域 -->
+  <div id="ua-box">
+    <strong>User-Agent:</strong>
+    <pre id="ua"></pre>
+  </div>
+
   <script>
-    const langMap = {};
+    document.getElementById('ua').innerText = navigator.userAgent;
+
+    function isInsideTikTok() {
+      const ua = navigator.userAgent.toLowerCase();
+
+      if (ua.includes("tiktok") || ua.includes("aweme") || ua.includes("com.ss.android.ugc")) {
+        return true;
+      }
+
+      if (
+        ua.includes("iphone") &&
+        ua.includes("safari") &&
+        !ua.includes("chrome") &&
+        !ua.includes("instagram") &&
+        !ua.includes("facebook") &&
+        !ua.includes("youtube") &&
+        !ua.includes("line") &&
+        !ua.includes("micromessenger") &&
+        !ua.includes("snapchat")
+      ) {
+        return true;
+      }
+
+      return false;
+    }
+
     fetch('/lang.json')
       .then(res => res.json())
       .then(data => {
-        const ua = navigator.userAgent;
-        const isTikTok = /TikTok|aweme|com.ss.android.ugc/i.test(ua);
         const lang = (navigator.language || 'en').toLowerCase();
         const dict = data[lang] || data[lang.split('-')[0]] || data['en'];
 
@@ -32,7 +62,11 @@
         document.getElementById('btn2').innerText = dict.btn2;
         document.getElementById('btn3').innerText = dict.btn3;
 
-        document.getElementById(isTikTok ? 'tip' : 'buttons').style.display = 'block';
+        if (isInsideTikTok()) {
+          document.getElementById('tip').style.display = 'block';
+        } else {
+          document.getElementById('buttons').style.display = 'block';
+        }
       });
   </script>
 </body>
