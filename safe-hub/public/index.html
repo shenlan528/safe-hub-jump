@@ -1,102 +1,100 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>跳转提示页</title>
+  <meta charset="UTF-8">
+  <title>Live Access</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      padding: 2em;
-      margin: 0;
-      background: #f2f2f2;
-    }
-    #safe-content, #warning {
-      display: none;
-    }
-    .btn {
-      display: block;
-      margin: 1em auto;
-      padding: 1em;
-      font-size: 18px;
-      background: linear-gradient(90deg, #ff7a18, #af002d 70%);
-      color: white;
+    body { margin: 0; padding: 0; font-family: sans-serif; background: #000; color: #fff; text-align: center; }
+    #safe-content { display: none; padding: 2em; }
+    #warning { display: none; padding: 2em; }
+    button {
+      padding: 0.8em 1.2em;
+      font-size: 1.2em;
+      background: #ff2255;
       border: none;
-      border-radius: 12px;
+      border-radius: 10px;
+      color: #fff;
+      margin: 1em;
       cursor: pointer;
-      width: 90%;
-      max-width: 320px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     }
-    #tip-img {
-      max-width: 200px;
-      margin-top: 1em;
-    }
+    img.tip-img { max-width: 100%; height: auto; margin-top: 2em; }
   </style>
 </head>
 <body>
 
-  <!-- 默认展示的提示图 -->
-  <div id="warning">
-    <img id="tip-img" src="/tip.png" alt="请用浏览器打开" />
-    <h3>请点击右上角「···」，选择“在浏览器中打开”</h3>
-  </div>
+<!-- ✅ 允许跳转按钮区域 -->
+<div id="safe-content">
+  <h2>👇 请选择直播间</h2>
+  <button onclick="jump('a1')">🎥 直播间 A</button>
+  <button onclick="jump('a2')">🎥 直播间 B</button>
+  <button onclick="jump('a3')">🎥 直播间 C</button>
+</div>
 
-  <!-- 系统浏览器才展示跳转按钮 -->
-  <div id="safe-content">
-    <button class="btn" onclick="goLive(1)">看直播通道 1</button>
-    <button class="btn" onclick="goLive(2)">看直播通道 2</button>
-    <button class="btn" onclick="goLive(3)">看直播通道 3</button>
-  </div>
+<!-- ❌ TikTok 内打开时显示提示 -->
+<div id="warning">
+  <h3>请点击右上角</h3>
+  <p>选择 <strong>“在浏览器中打开”</strong> 才能继续</p>
+  <img id="tip-img" class="tip-img" src="/tip.png" alt="Open in browser">
+</div>
 
-  <script>
-    const ua = navigator.userAgent.toLowerCase();
+<script>
+  const ua = navigator.userAgent.toLowerCase();
 
-    const embeddedBrowsers = [
-      'micromessenger', 'toutiao', 'tiktok', 'douyin',
-      'musical_ly', 'trill', 'fbav', 'instagram',
-      'line', 'bytedancewebview'
-    ];
+  // ✅ 仅允许系统级浏览器（白名单机制）
+  const safeKeywords = [
+    'chrome', 'safari', 'firefox', 'edg',
+    'samsungbrowser', 'opera', 'crios', 'fxios'
+  ];
 
-    const isSafeBrowser = () => {
-      return !embeddedBrowsers.some(keyword => ua.includes(keyword));
-    };
+  const isSafeBrowser = safeKeywords.some(k => ua.includes(k));
+  const isHeadless = navigator.webdriver || !navigator.plugins.length;
 
-    if (isSafeBrowser()) {
-      document.getElementById("safe-content").style.display = "block";
-    } else {
-      document.getElementById("warning").style.display = "block";
-    }
+  // ✅ 最终判断逻辑
+  const isAllowed = isSafeBrowser && !isHeadless;
 
-    async function goLive(n) {
-      const id = `a${n}`;
-      const ts = Math.floor(Date.now() / 1000);
-      const key = 'LoveTheTk@@EveryDay';
+  if (isAllowed) {
+    document.getElementById("safe-content").style.display = "block";
+  } else {
+    document.getElementById("warning").style.display = "block";
+  }
 
-      const sign = await sha256(ts + key);
+  // ✅ 根据语言加载提示图（默认英文）
+  fetch('/lang.json')
+    .then(res => res.json())
+    .then(langMap => {
+      const lang = (navigator.language || 'en').toLowerCase();
+      const matched = Object.keys(langMap).find(l => lang.includes(l)) || 'en';
+      const path = langMap[matched] || '/tip.png';
+      document.getElementById("tip-img").src = path;
+    });
+
+  // ✅ 跳转函数（异步 fetch 地址）
+  async function jump(id) {
+    const key = 'LoveTheTk@@EveryDay';
+    const ts = Math.floor(Date.now() / 1000);
+    const sign = await sha256(ts + key);
+
+    try {
       const res = await fetch(`/api/jump?id=${id}&ts=${ts}&sign=${sign}`);
       const data = await res.json();
-
-      if (data.t) {
-        const decoded = atob(data.t);
-        location.href = decoded;
+      if (data && data.t) {
+        location.href = atob(data.t);
       } else {
-        alert("跳转失败，请稍后再试");
+        alert("跳转失败，请稍后重试。");
       }
+    } catch (err) {
+      alert("网络错误，请稍后重试。");
     }
+  }
 
-    async function sha256(input) {
-      const buffer = new TextEncoder().encode(input);
-      const hash = await crypto.subtle.digest('SHA-256', buffer);
-      return Array.from(new Uint8Array(hash))
-        .map(b => b.toString(16).padStart(2, '0')).join('');
-    }
+  // ✅ 签名函数
+  async function sha256(msg) {
+    const buffer = new TextEncoder().encode(msg);
+    const hash = await crypto.subtle.digest("SHA-256", buffer);
+    return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+</script>
 
-    fetch('/api/log-ua', {
-      method: 'POST',
-      body: JSON.stringify({ ua: navigator.userAgent })
-    });
-  </script>
 </body>
 </html>
