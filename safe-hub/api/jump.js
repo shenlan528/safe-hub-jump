@@ -4,8 +4,18 @@ export default async function handler(req, res) {
   const key = 'LoveTheTk@@EveryDay';
   const now = Math.floor(Date.now() / 1000);
 
-  if (!id || !ts || !sign) return res.status(400).json({ error: 'Missing params' });
-  if (Math.abs(now - parseInt(ts)) > 300) return res.status(403).json({ error: 'Expired' });
+if (!id || !ts || !sign) {
+  return res.status(400).json({ error: 'Missing parameters' });
+}
+
+const timestamp = parseInt(ts);
+if (isNaN(timestamp)) {
+  return res.status(400).json({ error: 'Invalid timestamp' });
+}
+
+if (Math.abs(now - timestamp) > 300) {
+  return res.status(403).json({ error: 'Expired' });
+}
 
   const expectedSign = await sha256(ts + key);
   if (sign !== expectedSign) return res.status(403).json({ error: 'Invalid signature' });
