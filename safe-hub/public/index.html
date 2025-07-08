@@ -60,14 +60,16 @@
   }
 
   // ✅ 根据语言加载提示图（默认英文）
-  fetch('/lang.json')
-    .then(res => res.json())
-    .then(langMap => {
-      const lang = (navigator.language || 'en').toLowerCase();
-      const matched = Object.keys(langMap).find(l => lang.includes(l)) || 'en';
-      const path = langMap[matched] || '/tip.png';
-      document.getElementById("tip-img").src = path;
-    });
+  // fetch('/lang.json')
+    //   .then(res => res.json())
+    //   .then(langMap => {
+     //    const lang = (navigator.language || 'en').toLowerCase();
+      //   const matched = Object.keys(langMap).find(l => lang.includes(l)) || 'en';
+      //   const path = langMap[matched] || '/tip.png';
+       //  document.getElementById("tip-img").src = path;
+    //   });
+// ✅ 简化语言图加载：固定加载 tip.png
+document.getElementById('tip-img').src = '/tip.png';
 
   // ✅ 跳转函数（异步 fetch 地址）
   async function jump(id) {
