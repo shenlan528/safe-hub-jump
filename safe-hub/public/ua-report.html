@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <title>UA 报告页面</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: monospace;
+      background: #111;
+      color: #eee;
+      padding: 2em;
+    }
+    h1 {
+      color: #ff2255;
+    }
+    .ua-box {
+      background: #222;
+      padding: 1em;
+      border-radius: 8px;
+      word-break: break-all;
+      margin-top: 1em;
+      border: 1px solid #444;
+    }
+    button {
+      margin-top: 1em;
+      padding: 0.5em 1.2em;
+      font-size: 1em;
+      background: #444;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>📡 UA 报告工具</h1>
+  <p>以下是你的 User-Agent 信息：</p>
+
+  <div class="ua-box" id="ua-text"></div>
+  <div class="ua-box" id="time-text"></div>
+
+  <button onclick="copyUA()">复制 UA</button>
+
+<div class="ua-box" id="check-result"></div>
+<button onclick="checkAllow()">是否允许跳转？</button>
+
+  <script>
+    const ua = navigator.userAgent;
+    const now = new Date().toISOString();
+
+    document.getElementById('ua-text').textContent = ua;
+    document.getElementById('time-text').textContent = '时间：' + now;
+
+    // ✅ 上传 UA 到后端日志接口
+    fetch('/api/log-ua.js', { method: 'POST' });
+
+    function copyUA() {
+      navigator.clipboard.writeText(ua).then(() => {
+        alert('已复制 UA');
+      });
+    }
+
+async function checkAllow() {
+    const res = await fetch('/api/check-ua');
+    const data = await res.json();
+    document.getElementById('check-result').textContent =
+      '判断结果：' + (data.result ? '✅ 允许跳转' : '❌ 被拦截');
+  }
+
+  </script>
+
+</body>
+</html>
