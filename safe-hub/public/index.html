@@ -1,22 +1,14 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Live Access</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: sans-serif;
-      background: #000;
-      color: #fff;
-      text-align: center;
-    }
-    #safe-content, #warning {
-      display: none;
-      padding: 2em;
-    }
+    body { margin: 0; padding: 0; font-family: sans-serif; background: #000; color: #fff; text-align: center; }
+    #safe-content { display: none; padding: 2em; }
+    #warning { display: none; padding: 2em; }
+    #ua-display { font-size: 12px; margin-top: 2em; color: #888; word-break: break-all; }
     button {
       padding: 0.8em 1.2em;
       font-size: 1.2em;
@@ -27,22 +19,11 @@
       margin: 1em;
       cursor: pointer;
     }
-    img.tip-img {
-      max-width: 100%;
-      height: auto;
-      margin-top: 2em;
-    }
-    #ua-info {
-      font-size: 0.8em;
-      color: #aaa;
-      margin-top: 2em;
-      word-break: break-all;
-    }
+    img.tip-img { max-width: 100%; height: auto; margin-top: 2em; }
   </style>
 </head>
 <body>
 
-<!-- ✅ 允许跳转按钮区域 -->
 <div id="safe-content">
   <h2>👇 请选择直播间</h2>
   <button onclick="jump('a1')">🎥 直播间 A</button>
@@ -50,78 +31,45 @@
   <button onclick="jump('a3')">🎥 直播间 C</button>
 </div>
 
-<!-- ❌ TikTok 内打开时显示提示 -->
 <div id="warning">
   <h3>请点击右上角</h3>
   <p>选择 <strong>“在浏览器中打开”</strong> 才能继续</p>
-  <img id="tip-img" class="tip-img" src="/tip.png" alt="Open in browser" />
+  <img id="tip-img" class="tip-img" src="/tip.png" alt="Open in browser">
 </div>
 
-<!-- ✅ 显示当前UA信息，方便测试（测试完成后可隐藏） -->
-<div id="ua-info"></div>
+<div id="ua-display"></div>
 
 <script>
-  // ✅ 封装的可信浏览器判断逻辑
-  function isTrustedBrowser() {
-    const ua = navigator.userAgent.toLowerCase();
+  const ua = navigator.userAgent.toLowerCase();
+  const suspiciousKeywords = [
+    'tiktok', 'douyin', 'musical_ly', 'bytedancewebview', 'ttnet', 'trill', '_ly',
+    'webview', 'ttwebview', 'sslocal', 'bytedance', 'liteapp', 'appwebview',
+    'tiktoklite', 'ss.android.ugc.trill', 'com.ss.android', 'cronet'
+  ];
+  const safeKeywords = ['chrome', 'safari', 'firefox', 'edg', 'samsungbrowser', 'opera', 'crios', 'fxios'];
 
-    // ✅ 系统浏览器白名单关键词
-    const safeUAKeywords = [
-      'safari', 'chrome', 'crios', 'firefox', 'fxios',
-      'edg', 'opera', 'samsungbrowser'
-    ];
+  const isSuspicious = suspiciousKeywords.some(k => ua.includes(k));
+  const isSafe = safeKeywords.some(k => ua.includes(k));
+  const isHeadless = navigator.webdriver || !navigator.plugins.length;
 
-    // ❌ 黑名单关键词（覆盖 TikTok/Douyin/Trill/Webview 系 UA）
-    const suspiciousKeywords = [
-      'tiktok', 'douyin', 'musical_ly', 'bytedancewebview',
-      'ttnet', 'trill', '_ly', 'webview', 'ttwebview',
-      'sslocal', 'bytedance', 'liteapp', 'appwebview'
-    ];
+  const isAllowed = isSafe && !isSuspicious && !isHeadless;
 
-    const isSafe = safeUAKeywords.some(k => ua.includes(k));
-    const isSuspicious = suspiciousKeywords.some(k => ua.includes(k));
-    const isHeadless = navigator.webdriver || !navigator.plugins.length;
-
-    // ✅ TikTok WebView 特有对象
-    const hasBridge = !!(window?.ttJSBridge || window?.webkit?.messageHandlers?.__ttWebviewBridge);
-
-    return isSafe && !isSuspicious && !isHeadless && !hasBridge;
-  }
-
-  // ✅ 显示或隐藏内容
-  const isAllowed = isTrustedBrowser();
   if (isAllowed) {
     document.getElementById("safe-content").style.display = "block";
   } else {
     document.getElementById("warning").style.display = "block";
   }
 
-  // ✅ 固定提示图（不再根据语言）
-  document.getElementById('tip-img').src = '/tip.png';
+  document.getElementById("ua-display").innerText = 'UA: ' + navigator.userAgent;
+  fetch('/api/log-ua');
 
-  // ✅ 显示 UA 信息（测试用）
-  document.getElementById('ua-info').textContent = 'UA: ' + navigator.userAgent;
-
-  // ✅ 跳转按钮逻辑（含签名）
   async function jump(id) {
     const key = 'LoveTheTk@@EveryDay';
     const ts = Math.floor(Date.now() / 1000);
     const sign = await sha256(ts + key);
-
-    try {
-      const res = await fetch(`/api/jump?id=${id}&ts=${ts}&sign=${sign}`);
-      const data = await res.json();
-      if (data && data.t) {
-        location.href = atob(data.t);
-      } else {
-        alert("跳转失败，请稍后重试。");
-      }
-    } catch (err) {
-      alert("网络错误，请稍后重试。");
-    }
+    location.href = `/api/jump?id=${id}&ts=${ts}&sign=${sign}`;
   }
 
-  // ✅ SHA-256 签名函数（浏览器版）
   async function sha256(msg) {
     const buffer = new TextEncoder().encode(msg);
     const hash = await crypto.subtle.digest("SHA-256", buffer);

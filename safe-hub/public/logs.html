@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>UA 日志查看</title>
+  <style>
+    body { font-family: sans-serif; padding: 2em; background: #111; color: #eee; }
+    h1 { color: #ff2255; }
+    pre { background: #222; padding: 1em; border-radius: 5px; overflow-x: auto; white-space: pre-wrap; }
+    select, button { margin: 0.5em; padding: 0.5em; }
+  </style>
+</head>
+<body>
+  <h1>所有 UA 访问日志</h1>
+  <label>每页条数:
+    <select id="page-size">
+      <option value="10">10</option>
+      <option value="50">50</option>
+    </select>
+  </label>
+  <button onclick="changePage(-1)">上一页</button>
+  <button onclick="changePage(1)">下一页</button>
+  <div id="info"></div>
+  <pre id="log">加载中...</pre>
+
+  <script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxZlHcLl9t52DBXSyDwxaK6QHsVMDzNRAIMxRYVyluSRK__YsfCz20xdwx6YqRWYgiV/exec';
+    let page = 1;
+    let pageSize = 10;
+
+    document.getElementById('page-size').addEventListener('change', (e) => {
+      pageSize = parseInt(e.target.value);
+      page = 1;
+      loadLogs();
+    });
+
+    function changePage(offset) {
+      page += offset;
+      if (page < 1) page = 1;
+      loadLogs();
+    }
+
+    function loadLogs() {
+      document.getElementById('log').innerText = '加载中...';
+      fetch(`${API_URL}?page=${page}&pageSize=${pageSize}`)
+        .then(res => res.json())
+        .then(res => {
+          const logStr = res.data.map(d => `[${d.timestamp}]\n${d.ua}\n`).join('\n');
+          document.getElementById('log').innerText = logStr || '暂无记录';
+          document.getElementById('info').innerText = `第 ${res.page} 页，共 ${Math.ceil(res.total / res.pageSize)} 页（总计 ${res.total} 条）`;
+        })
+        .catch(err => {
+          document.getElementById('log').innerText = '加载失败：' + err;
+        });
+    }
+
+    loadLogs();
+  </script>
+</body>
+</html>
