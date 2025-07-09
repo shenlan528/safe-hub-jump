@@ -46,7 +46,7 @@
       fetch(`${API_URL}?page=${page}&pageSize=${pageSize}`)
         .then(res => res.json())
         .then(res => {
-          const logStr = res.data.map(d => `[${d.timestamp}]\n${d.ua}\n`).join('\n');
+          const logStr = res.data.map(d => `[${d.timestamp}]\n${d.ua}\n${d.ip}\n`).join('\n');
           document.getElementById('log').innerText = logStr || '暂无记录';
           document.getElementById('info').innerText = `第 ${res.page} 页，共 ${Math.ceil(res.total / res.pageSize)} 页（总计 ${res.total} 条）`;
         })
