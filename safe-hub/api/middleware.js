@@ -1,25 +1,25 @@
-export const config = {
-  matcher: ['/api/copy']
-};
+import { NextResponse } from 'next/server';
+import fs from 'fs/promises';
 
-let uaBlacklist = [];
-let browserWhitelist = [];
-
-(async () => {
-  uaBlacklist = (await import('./ua-blacklist.json')).default;
-  browserWhitelist = (await import('./browser-whitelist.json')).default;
-})();
-
-export default function middleware(req) {
-  const ua = req.headers.get('user-agent') || '';
+export async function middleware(req) {
+  const ua = req.headers.get('user-agent')?.toLowerCase() || '';
   const referer = req.headers.get('referer') || '';
+  const url = req.nextUrl;
+  const pathname = url.pathname;
 
-  const isIframe = referer && !referer.startsWith(req.nextUrl.origin);
-  const uaLower = ua.toLowerCase();
-  const isBlacklisted = uaBlacklist.some(keyword => uaLower.includes(keyword));
-  const isWhitelisted = browserWhitelist.some(browser => uaLower.includes(browser));
+  const blacklist = JSON.parse(await fs.readFile('ua-blacklist.json', 'utf-8'));
+  const whitelist = JSON.parse(await fs.readFile('browser-whitelist.json', 'utf-8'));
 
-  if (isIframe || isBlacklisted || !isWhitelisted) {
-    return new Response('Access denied', { status: 403 });
+  const isBlacklisted = blacklist.some(keyword => ua.includes(keyword));
+  const isNotWhitelisted = !whitelist.some(keyword => ua.includes(keyword));
+  const isFromTiktok = referer.includes('tiktok');
+
+  // 拦截二维码图片请求（仅允许系统浏览器访问）
+  if (pathname.startsWith('/qr-') && pathname.endsWith('.png')) {
+    if (isBlacklisted || isNotWhitelisted || isFromTiktok) {
+      return new NextResponse('Forbidden', { status: 403 });
+    }
   }
+
+  return NextResponse.next();
 }
