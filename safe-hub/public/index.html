@@ -1,81 +1,88 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Live Access</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Live Hub</title>
   <style>
-    body { margin: 0; padding: 0; font-family: sans-serif; background: #000; color: #fff; text-align: center; }
-    #safe-content { display: none; padding: 2em; }
-    #warning { display: none; padding: 2em; }
-    #ua-display { font-size: 12px; margin-top: 2em; color: #888; word-break: break-all; }
-    button {
-      padding: 0.8em 1.2em;
-      font-size: 1.2em;
-      background: #ff2255;
-      border: none;
-      border-radius: 10px;
-      color: #fff;
-      margin: 1em;
-      cursor: pointer;
-    }
-    img.tip-img { max-width: 100%; height: auto; margin-top: 2em; }
+    body { font-family: sans-serif; text-align: center; padding: 2em; }
+    .hidden { display: none; }
+    #tipImage { width: 80%; max-width: 300px; margin-top: 1em; }
+    button { padding: 1em 2em; margin: 1em; font-size: 1em; }
   </style>
 </head>
 <body>
+  <h2 id="tip"></h2>
+  <div id="buttons" class="hidden">
+    <button id="btn1"></button>
+    <button id="btn2"></button>
+    <button id="btn3"></button>
+  </div>
+  <img id="tipImage" src="tip.png" class="hidden" />
 
-<div id="safe-content">
-  <h2>👇 请选择直播间</h2>
-  <button onclick="jump('a1')">🎥 直播间 A</button>
-  <button onclick="jump('a2')">🎥 直播间 B</button>
-  <button onclick="jump('a3')">🎥 直播间 C</button>
-</div>
+  <script>
+    const langMap = {};
+    let currentLang = 'en';
 
-<div id="warning">
-  <h3>请点击右上角</h3>
-  <p>选择 <strong>“在浏览器中打开”</strong> 才能继续</p>
-  <img id="tip-img" class="tip-img" src="/tip.png" alt="Open in browser">
-</div>
+    async function detectLanguage() {
+      const res = await fetch('/lang.json');
+      const langs = await res.json();
+      langMap.langs = langs;
 
-<div id="ua-display"></div>
+      const browserLang = navigator.language || 'en';
+      currentLang = langs[browserLang] ? browserLang : 'en';
 
-<script>
-  const ua = navigator.userAgent.toLowerCase();
-  const suspiciousKeywords = [
-    'tiktok', 'douyin', 'musical_ly', 'bytedancewebview', 'ttnet', 'trill', '_ly',
-    'webview', 'ttwebview', 'sslocal', 'bytedance', 'liteapp', 'appwebview',
-    'tiktoklite', 'ss.android.ugc.trill', 'com.ss.android', 'cronet'
-  ];
-  const safeKeywords = ['chrome', 'safari', 'firefox', 'edg', 'samsungbrowser', 'opera', 'crios', 'fxios'];
+      document.getElementById('tip').textContent = langs[currentLang].tip;
+      document.getElementById('btn1').textContent = langs[currentLang].btn1;
+      document.getElementById('btn2').textContent = langs[currentLang].btn2;
+      document.getElementById('btn3').textContent = langs[currentLang].btn3;
+    }
 
-  const isSuspicious = suspiciousKeywords.some(k => ua.includes(k));
-  const isSafe = safeKeywords.some(k => ua.includes(k));
-  const isHeadless = navigator.webdriver || !navigator.plugins.length;
+    function isHeadless() {
+      return navigator.webdriver || !navigator.plugins.length;
+    }
 
-  const isAllowed = isSafe && !isSuspicious && !isHeadless;
+    async function isSafeBrowser() {
+      const ua = navigator.userAgent.toLowerCase();
+      const res = await fetch('/ua-blacklist.json');
+      const blackList = await res.json();
 
-  if (isAllowed) {
-    document.getElementById("safe-content").style.display = "block";
-  } else {
-    document.getElementById("warning").style.display = "block";
-  }
+      const ref = document.referrer;
+      const isIframe = window !== window.parent;
+      const isBlacklisted = blackList.some(keyword => ua.includes(keyword));
+      const isHeadlessEnv = isHeadless();
 
-  document.getElementById("ua-display").innerText = 'UA: ' + navigator.userAgent;
-  fetch('/api/log-ua');
+      return !isBlacklisted && !isIframe && !isHeadlessEnv && !ref.includes('tiktok');
+    }
 
-  async function jump(id) {
-    const key = 'LoveTheTk@@EveryDay';
-    const ts = Math.floor(Date.now() / 1000);
-    const sign = await sha256(ts + key);
-    location.href = `/api/jump?id=${id}&ts=${ts}&sign=${sign}`;
-  }
+    async function copyLink(id) {
+      const res = await fetch(`/api/copy?id=${id}`);
+      const data = await res.json();
+      const realUrl = atob(data.t);
+      await navigator.clipboard.writeText(realUrl);
+      alert("✅ 链接已复制，请粘贴到系统浏览器打开");
+    }
 
-  async function sha256(msg) {
-    const buffer = new TextEncoder().encode(msg);
-    const hash = await crypto.subtle.digest("SHA-256", buffer);
-    return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
-  }
-</script>
+    async function init() {
+      await detectLanguage();
+      const safe = await isSafeBrowser();
+      const buttons = document.getElementById('buttons');
+      const tipImage = document.getElementById('tipImage');
 
+      if (safe) {
+        buttons.classList.remove('hidden');
+        document.getElementById('btn1').onclick = () => copyLink('a1');
+        document.getElementById('btn2').onclick = () => copyLink('a2');
+        document.getElementById('btn3').onclick = () => copyLink('a3');
+      } else {
+        tipImage.classList.remove('hidden');
+      }
+
+      // 上报日志
+      fetch('/api/log-ua');
+    }
+
+    init();
+  </script>
 </body>
 </html>
