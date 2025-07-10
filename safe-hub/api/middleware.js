@@ -1,9 +1,14 @@
-import uaBlacklist from './ua-blacklist.json' assert { type: 'json' };
-import browserWhitelist from './browser-whitelist.json' assert { type: 'json' };
-
 export const config = {
   matcher: ['/api/copy']
 };
+
+let uaBlacklist = [];
+let browserWhitelist = [];
+
+(async () => {
+  uaBlacklist = (await import('./ua-blacklist.json')).default;
+  browserWhitelist = (await import('./browser-whitelist.json')).default;
+})();
 
 export default function middleware(req) {
   const ua = req.headers.get('user-agent') || '';
