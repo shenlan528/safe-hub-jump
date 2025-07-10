@@ -4,9 +4,10 @@ export default async function handler(req, res) {
   const time = new Date().toISOString();
 
   const suspiciousKeywords = [
-    'tiktok', 'musical_ly', 'bytedancewebview', 'douyin', 'trill',
-    'ttnet', 'com.ss.android', 'ss.android.ugc.trill', 'cronet', 'liteapp', 'tiktoklite'
+    "tiktok",  "musical_ly",  "_ly",  "webview",  "ttwebview",    "appwebview",  "bytedancewebview",   "bytedance",  "douyin",  "trill",  "ttnet",  "com.ss.android",  "ss.android.ugc.trill",  "cronet",  "liteapp",  "sslocal",  "tiktoklite"
   ];
+
+
   const uaLower = ua.toLowerCase();
   const isSuspicious = suspiciousKeywords.some(k => uaLower.includes(k));
   const type = isSuspicious ? 'suspicious' : 'all';
