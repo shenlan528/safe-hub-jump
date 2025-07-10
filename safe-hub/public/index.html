@@ -12,7 +12,7 @@
   </style>
 </head>
 <body>
-  <h2 id="tip"></h2>
+  <h2 id="tip"  class="hidden"></h2>
   <div id="qrs" class="hidden">
     <img id="qr1" class="qr" src="" />
     <img id="qr2" class="qr" src="" />
@@ -58,6 +58,7 @@
 
       const qrs = document.getElementById('qrs');
       const tipImage = document.getElementById('tipImage');
+      const tip = document.getElementById('tip');
 
       if (safe) {
         const ts = Date.now(); // 加时间戳扰动防止静态缓存
@@ -67,6 +68,7 @@
         document.getElementById('qr3').src = `/qr-a3.png?ts=${ts}`;
       } else {
         tipImage.classList.remove('hidden');
+	tip.classList.remove('hidden');
       }
 
       // 日志上报
