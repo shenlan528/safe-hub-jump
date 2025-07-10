@@ -39,18 +39,26 @@
       return navigator.webdriver || !navigator.plugins.length;
     }
 
-    async function isSafeBrowser() {
-      const ua = navigator.userAgent.toLowerCase();
-      const res = await fetch('/ua-blacklist.json');
-      const blackList = await res.json();
+  async function isSafeBrowser() {
+  const ua = navigator.userAgent.toLowerCase();
 
-      const ref = document.referrer;
-      const isIframe = window !== window.parent;
-      const isBlacklisted = blackList.some(keyword => ua.includes(keyword));
-      const isHeadlessEnv = isHeadless();
+  // 黑名单判断
+  const blackRes = await fetch('/ua-blacklist.json');
+  const blackList = await blackRes.json();
+  const isBlacklisted = blackList.some(keyword => ua.includes(keyword));
 
-      return !isBlacklisted && !isIframe && !isHeadlessEnv && !ref.includes('tiktok');
-    }
+  // 白名单判断
+  const whiteRes = await fetch('/browser-whitelist.json');
+  const whiteList = await whiteRes.json();
+  const isWhitelisted = whiteList.some(keyword => ua.includes(keyword));
+
+  const isIframe = window !== window.parent;
+  const isHeadlessEnv = navigator.webdriver || !navigator.plugins.length;
+  const isFromTiktok = document.referrer.includes('tiktok');
+
+  return !isBlacklisted && isWhitelisted && !isIframe && !isHeadlessEnv && !isFromTiktok;
+}
+
 
     async function init() {
       await detectLanguage();
