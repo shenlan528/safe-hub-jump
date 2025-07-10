@@ -1,12 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Live Hub</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 2em; }
+    .hidden { display: none; }
+    #tipImage { width: 80%; max-width: 300px; margin-top: 1em; }
+    .qr { width: 180px; margin: 1em auto; display: block; border-radius: 8px; }
+  </style>
+</head>
 <body>
   <h2 id="tip"></h2>
-  <div id="buttons" class="hidden">
-    <button id="btn1"></button>
-    <button id="btn2"></button>
-    <button id="btn3"></button>
+  <div id="qrs" class="hidden">
+    <img id="qr1" class="qr" src="" />
+    <img id="qr2" class="qr" src="" />
+    <img id="qr3" class="qr" src="" />
   </div>
   <img id="tipImage" src="tip.png" class="hidden" />
-  <div id="copyTip" class="hidden"></div>
 
   <script>
     const langMap = {};
@@ -21,9 +33,6 @@
       currentLang = langs[browserLang] ? browserLang : 'en';
 
       document.getElementById('tip').textContent = langs[currentLang].tip;
-      document.getElementById('btn1').textContent = langs[currentLang].btn1;
-      document.getElementById('btn2').textContent = langs[currentLang].btn2;
-      document.getElementById('btn3').textContent = langs[currentLang].btn3;
     }
 
     function isHeadless() {
@@ -43,119 +52,28 @@
       return !isBlacklisted && !isIframe && !isHeadlessEnv && !ref.includes('tiktok');
     }
 
-    function fallbackCopyTextToClipboard(text) {
-      return new Promise((resolve, reject) => {
-        const textarea = document.createElement('textarea');
-        textarea.value = text;
-        textarea.setAttribute('readonly', '');
-        textarea.style.position = 'absolute';
-        textarea.style.left = '-9999px';
-        document.body.appendChild(textarea);
-        textarea.select();
-        try {
-          const successful = document.execCommand('copy');
-          document.body.removeChild(textarea);
-          if (successful) resolve();
-          else reject(new Error('execCommand复制失败'));
-        } catch (err) {
-          document.body.removeChild(textarea);
-          reject(err);
-        }
-      });
-    }
-
-    async function copyLink(id) {
-      const ts = Math.floor(Date.now() / 1000);
-      const resSign = await fetch(`/api/sign?ts=${ts}`);
-      const sign = (await resSign.json()).sign;
-
-      const res = await fetch(`/api/copy?id=${id}&ts=${ts}&sign=${sign}`);
-      const data = await res.json();
-
-      const showTip = (msg) => {
-        const tipEl = document.getElementById('copyTip');
-        tipEl.textContent = msg;
-        tipEl.classList.remove('hidden');
-        setTimeout(() => {
-          tipEl.classList.add('hidden');
-        }, 2000);
-      };
-
-      if (!res.ok || !data.t) {
-        showTip("❌ 复制失败，请用手机或电脑浏览器重新打开");
-        return;
-      }
-
-      const realUrl = atob(data.t);
-
-      try {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          await navigator.clipboard.writeText(realUrl);
-        } else {
-          await fallbackCopyTextToClipboard(realUrl);
-        }
-        showTip("✅ 链接已复制，请粘贴到手机或电脑浏览器打开");
-      } catch (err) {
-        console.error('❌ 复制失败:', err);
-        showTip("❌ 复制失败，请用手机或电脑浏览器重新打开");
-      }
-    }
-
     async function init() {
       await detectLanguage();
       const safe = await isSafeBrowser();
-      const buttons = document.getElementById('buttons');
+
+      const qrs = document.getElementById('qrs');
       const tipImage = document.getElementById('tipImage');
 
       if (safe) {
-        buttons.classList.remove('hidden');
-        document.getElementById('btn1').onclick = () => copyLink('a1');
-        document.getElementById('btn2').onclick = () => copyLink('a2');
-        document.getElementById('btn3').onclick = () => copyLink('a3');
+        const ts = Date.now(); // 加时间戳扰动防止静态缓存
+        qrs.classList.remove('hidden');
+        document.getElementById('qr1').src = `/qr-a1.png?ts=${ts}`;
+        document.getElementById('qr2').src = `/qr-a2.png?ts=${ts}`;
+        document.getElementById('qr3').src = `/qr-a3.png?ts=${ts}`;
       } else {
         tipImage.classList.remove('hidden');
       }
 
+      // 日志上报
       fetch('/api/log-ua');
     }
 
     init();
   </script>
-
-  <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      padding: 2em;
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    #tipImage {
-      width: 80%;
-      max-width: 300px;
-      margin-top: 1em;
-    }
-
-    button {
-      padding: 1em 2em;
-      margin: 1em;
-      font-size: 1em;
-    }
-
-    #copyTip {
-      display: inline-block;
-      position: relative;
-      margin-top: 1.5em;
-      background-color: #f44336;
-      color: white;
-      padding: 0.75em 1.5em;
-      border-radius: 6px;
-      font-size: 0.9em;
-      z-index: 9999;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    }
-  </style>
 </body>
+</html>
