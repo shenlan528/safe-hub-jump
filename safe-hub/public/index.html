@@ -1,4 +1,3 @@
-<!-- force deploy -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -56,13 +55,23 @@
       return !isBlacklisted && !isIframe && !isHeadlessEnv && !ref.includes('tiktok');
     }
 
-    async function copyLink(id) {
-      const res = await fetch(`/api/copy?id=${id}`);
-      const data = await res.json();
-      const realUrl = atob(data.t);
-      await navigator.clipboard.writeText(realUrl);
-      alert("✅ 链接已复制，请粘贴到系统浏览器打开");
+   async function copyLink(id) {
+    const ts = Math.floor(Date.now() / 1000);
+    const resSign = await fetch(`/api/sign?ts=${ts}`);
+    const sign = (await resSign.json()).sign;
+
+    const res = await fetch(`/api/copy?id=${id}&ts=${ts}&sign=${sign}`);
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert("❌ 复制失败，请稍后再试");
+      return;
     }
+
+    const realUrl = atob(data.t);
+    await navigator.clipboard.writeText(realUrl);
+    alert("✅ 链接已复制，请粘贴到系统浏览器打开");
+  }
 
     async function init() {
       await detectLanguage();
