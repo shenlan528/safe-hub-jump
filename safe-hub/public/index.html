@@ -1,38 +1,13 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Live Hub</title>
-  <style>
-    body { font-family: sans-serif; text-align: center; padding: 2em; }
-    .hidden { display: none; }
-    #tipImage { width: 80%; max-width: 300px; margin-top: 1em; }
-    button { padding: 1em 2em; margin: 1em; font-size: 1em; }
-#copyTip {
-  position: fixed;
-  bottom: 40px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: #f44336;
-  color: white;
-  padding: 0.75em 1.5em;
-  border-radius: 6px;
-  font-size: 0.9em;
-  z-index: 9999;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-}
-  </style>
-</head>
 <body>
   <h2 id="tip"></h2>
-  <div id="buttons" class="hidden">
+  <div id="buttons" class="hidden" style="position: relative;">
     <button id="btn1"></button>
     <button id="btn2"></button>
     <button id="btn3"></button>
+    <div id="copyTip" class="hidden"></div>
   </div>
   <img id="tipImage" src="tip.png" class="hidden" />
- <div id="copyTip" class="hidden">复制成功！</div>
+  
   <script>
     const langMap = {};
     let currentLang = 'en';
@@ -68,51 +43,64 @@
       return !isBlacklisted && !isIframe && !isHeadlessEnv && !ref.includes('tiktok');
     }
 
-   async function copyLink(id) {
-  const ts = Math.floor(Date.now() / 1000);
-  const resSign = await fetch(`/api/sign?ts=${ts}`);
-  const sign = (await resSign.json()).sign;
-
-  const res = await fetch(`/api/copy?id=${id}&ts=${ts}&sign=${sign}`);
-  const data = await res.json();
-
-  const showTip = (msg) => {
-    const tipEl = document.getElementById('copyTip');
-    tipEl.textContent = msg;
-    tipEl.classList.remove('hidden');
-    setTimeout(() => {
-      tipEl.classList.add('hidden');
-    }, 2000);
-  };
-
-  if (!res.ok || !data.t) {
-    showTip("❌ 复制失败，请稍后再试");
-    return;
-  }
-
-  const realUrl = atob(data.t);
-
-  try {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(realUrl);
-    } else {
-      const textarea = document.createElement('textarea');
-      textarea.value = realUrl;
-      textarea.setAttribute('readonly', '');
-      textarea.style.position = 'absolute';
-      textarea.style.left = '-9999px';
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textarea);
+    // 新增 fallback 复制方法
+    function fallbackCopyTextToClipboard(text) {
+      return new Promise((resolve, reject) => {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'absolute';
+        textarea.style.left = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+          const successful = document.execCommand('copy');
+          document.body.removeChild(textarea);
+          if (successful) resolve();
+          else reject(new Error('execCommand复制失败'));
+        } catch (err) {
+          document.body.removeChild(textarea);
+          reject(err);
+        }
+      });
     }
 
-    showTip("✅ 链接已复制，请粘贴到手机或电脑浏览器打开");
-  } catch (err) {
-    console.error('❌ 复制失败:', err);
-    showTip("❌ 复制失败，请手动复制链接");
-  }
-}
+    async function copyLink(id) {
+      const ts = Math.floor(Date.now() / 1000);
+      const resSign = await fetch(`/api/sign?ts=${ts}`);
+      const sign = (await resSign.json()).sign;
+
+      const res = await fetch(`/api/copy?id=${id}&ts=${ts}&sign=${sign}`);
+      const data = await res.json();
+
+      const showTip = (msg) => {
+        const tipEl = document.getElementById('copyTip');
+        tipEl.textContent = msg;
+        tipEl.classList.remove('hidden');
+        setTimeout(() => {
+          tipEl.classList.add('hidden');
+        }, 2000);
+      };
+
+      if (!res.ok || !data.t) {
+        showTip("❌ 复制失败，请用手机或电脑浏览器重新打开本页再点击复制按钮!");
+        return;
+      }
+
+      const realUrl = atob(data.t);
+
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(realUrl);
+        } else {
+          await fallbackCopyTextToClipboard(realUrl);
+        }
+        showTip("✅ 链接已复制，请粘贴到手机或电脑浏览器打开");
+      } catch (err) {
+        console.error('❌ 复制失败:', err);
+        showTip("❌ 复制失败，请用手机或电脑浏览器重新打开本页再点击复制按钮!");
+      }
+    }
 
     async function init() {
       await detectLanguage();
@@ -135,5 +123,19 @@
 
     init();
   </script>
+
+  <style>
+    #copyTip {
+      position: relative;
+      margin-top: 10px;
+      background-color: #f44336;
+      color: white;
+      padding: 0.75em 1.5em;
+      border-radius: 6px;
+      font-size: 0.9em;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      display: inline-block;
+      user-select: none;
+    }
+  </style>
 </body>
-</html>
